@@ -45,7 +45,7 @@ class Crawler(object):
 
             friends = self._fetch_friends_ids(user_id)
             self.edges.extend([(user_id, friend) for friend in friends])
-            self.crawl_frontier.update({friend: -1 for friend in friends})
+            self.crawl_frontier.update({friend: -1 for friend in friends if friend not in self.crawl_frontier})
 
             cnt += 1
 
@@ -54,5 +54,4 @@ class Crawler(object):
                 ranks = nx.pagerank(self.graph)
                 for key in self.crawl_frontier.keys():
                     if key in ranks:
-                        # the smaller the more important
                         self.crawl_frontier[key] = ranks[key]

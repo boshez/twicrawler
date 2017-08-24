@@ -6,6 +6,7 @@ import pqdict
 class Crawler(object):
     def __init__(self, config, seed):
         seed_dict = {user_id: 0 for user_id in seed}
+        # the larger the more important (reverse=True)
         self.crawl_frontier = pqdict.pqdict(seed_dict, reverse=True)
         self.visited = []
         self.edges = []
@@ -31,7 +32,6 @@ class Crawler(object):
             if not self.crawl_frontier:
                 break
 
-            # dqdict pops the smallest element first
             user_id = self.crawl_frontier.pop()
             if user_id in self.visited:
                 continue
@@ -45,15 +45,14 @@ class Crawler(object):
 
             friends = self._fetch_friends_ids(user_id)
             self.edges.extend([(user_id, friend) for friend in friends])
-            self.crawl_frontier.update({friend: 1 for friend in friends})
+            self.crawl_frontier.update({friend: -1 for friend in friends})
 
             cnt += 1
 
-            # updates priorities according to PageRank
             if cnt % update_interval == 0:
                 self.graph = nx.from_edgelist(self.edges)
                 ranks = nx.pagerank(self.graph)
                 for key in self.crawl_frontier.keys():
                     if key in ranks:
                         # the smaller the more important
-                        self.crawl_frontier[key] = -ranks[key]
+                        self.crawl_frontier[key] = ranks[key]

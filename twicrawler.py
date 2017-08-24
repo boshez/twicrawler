@@ -6,6 +6,7 @@ class Crawler(object):
     def __init__(self, api, seed):
         seed_dict = {user_id: 0 for user_id in seed}
         self.crawl_frontier = pqdict.pqdict(seed_dict, reverse=True)
+        self.visited = []
         self.edges = []
         self.statuses = []
         self.api = api
@@ -29,6 +30,10 @@ class Crawler(object):
                 break
 
             user_id = self.crawl_frontier.pop()
+            if user_id in self.visited:
+                continue
+            self.visited.append(user_id)
+
             status = self._fetch_user(user_id)
             if status.protected:
                 continue
@@ -43,7 +48,8 @@ class Crawler(object):
             g = nx.from_edgelist(self.edges)
             ranks = nx.pagerank(g)
             for key in self.crawl_frontier.keys():
-                self.crawl_frontier[key] = ranks[key]
+                if key in ranks:
+                    self.crawl_frontier[key] = ranks[key]
 
             cnt += 1
 

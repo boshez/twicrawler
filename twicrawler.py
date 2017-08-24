@@ -1,15 +1,21 @@
+import tweepy
 import networkx as nx
 import pqdict
 
 
 class Crawler(object):
-    def __init__(self, api, seed):
+    def __init__(self, config, seed):
         seed_dict = {user_id: 0 for user_id in seed}
         self.crawl_frontier = pqdict.pqdict(seed_dict, reverse=True)
         self.visited = []
         self.edges = []
         self.statuses = []
-        self.api = api
+        self._auth_api(config)
+
+    def _auth_api(self, config):
+        auth = tweepy.OAuthHandler(config.consumer_key, config.consumer_secret)
+        auth.set_access_token(config.access_token_key, config.access_token_secret)
+        self.api = tweepy.API(auth)
         self.api.wait_on_rate_limit = True
 
     def _fetch_user(self, user_id):
@@ -18,12 +24,7 @@ class Crawler(object):
     def _fetch_friends_ids(self, user_id):
         return self.api.friends_ids(user_id)
 
-    def _write_edges_csv(self, path):
-        with open(path, 'a') as file:
-            for item in self.edges:
-                file.write("%d,%d\n" % item)
-
-    def crawl(self, path, max_itr=15):
+    def crawl(self, update_interval=5, max_itr=15):
         cnt = 0
         while cnt < max_itr:
             if not self.crawl_frontier:
@@ -44,13 +45,13 @@ class Crawler(object):
             self.edges.extend([(user_id, friend) for friend in friends])
             self.crawl_frontier.update({user_id: 0 for user_id in friends})
 
-            # updates priorities according to PageRank
-            g = nx.from_edgelist(self.edges)
-            ranks = nx.pagerank(g)
-            for key in self.crawl_frontier.keys():
-                if key in ranks:
-                    self.crawl_frontier[key] = ranks[key]
-
             cnt += 1
+            # updates priorities according to PageRank
+            if cnt % update_interval == 0:
+                g = nx.from_edgelist(self.edges)
+                ranks = nx.pagerank(g)
+                for key in self.crawl_frontier.keys():
+                    if key in ranks:
+                        self.crawl_frontier[key] = ranks[key]
 
-        self._write_edges_csv(path)
+

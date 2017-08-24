@@ -46,6 +46,7 @@ class Crawler(object):
             self.crawl_frontier.update({user_id: 0 for user_id in friends})
 
             cnt += 1
+
             # updates priorities according to PageRank
             if cnt % update_interval == 0:
                 g = nx.from_edgelist(self.edges)

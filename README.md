@@ -1,5 +1,5 @@
 # twicrawler
-Crawling the social graph on Twitter.
+Crawling the social graph on Twitter
 
 ## How to use
 Create a `config.py` file on the top of the repository.<br>
